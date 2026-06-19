@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import 'react-native-gesture-handler';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+
+import { criarTabela } from './src/database/database';
 
 import TelaTaverna from './src/screens/TelaTaverna';
 import { TelaPergaminho } from './src/screens/TelaPergaminho';
@@ -10,6 +12,10 @@ import { TelaPergaminho } from './src/screens/TelaPergaminho';
 const Stack = createStackNavigator();
 
 export default function App() {
+
+  useEffect(() => {
+    criarTabela();
+  }, []);
 
   return (
 

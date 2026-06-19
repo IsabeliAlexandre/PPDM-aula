@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import {
   View,
@@ -9,35 +9,79 @@ import {
   Alert
 } from 'react-native';
 
+import { useFocusEffect } from '@react-navigation/native';
+
+import db from '../database/database';
+
 export default function TelaTaverna({ navigation }) {
 
-  const [missoes, setMissoes] = useState([
-    {
-      id: '1',
-      titulo: 'Derrotar o bug gigante',
-      xp: 500
-    },
+  const [missoes, setMissoes] = useState([]);
 
-    {
-      id: '2',
-      titulo: 'Refatorar o Código Legado',
-      xp: 1000
-    },
-  ]);
+  function carregarMissoes() {
 
-  // Tratamento gestual
+    const dados = db.getAllSync(
+      'SELECT * FROM missoes'
+    );
+
+    setMissoes(dados);
+
+  }
+
+  function excluirMissao(id) {
+
+    Alert.alert(
+      'Excluir missão',
+      'Deseja realmente excluir esta missão?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Excluir',
+          onPress: () => {
+
+            db.runSync(
+              'DELETE FROM missoes WHERE id = ?',
+              [id]
+            );
+
+            carregarMissoes();
+
+          }
+        }
+      ]
+    );
+
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarMissoes();
+    }, [])
+  );
+
   const lidarComToqueLongo = (titulo) => {
 
     Alert.alert(
-      "Missão concluída",
+      'Missão concluída',
       `Você finalizou sua missão: ${titulo}. XP adquirido!`
     );
 
   };
 
+  const totalXp = missoes.reduce(
+    (total, missao) => total + missao.xp,
+    0
+  );
+
   return (
 
     <View style={styles.container}>
+
+      <Text style={styles.totalXp}>
+        🏆 {totalXp} XP
+      </Text>
 
       <Text style={styles.titulo}>
         Quadro de Missões
@@ -46,7 +90,9 @@ export default function TelaTaverna({ navigation }) {
       <FlatList
         data={missoes}
 
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) =>
+          item.id.toString()
+        }
 
         renderItem={({ item }) => (
 
@@ -73,6 +119,15 @@ export default function TelaTaverna({ navigation }) {
               XP: {item.xp}
             </Text>
 
+            <TouchableOpacity
+              style={styles.botaoExcluir}
+              onPress={() => excluirMissao(item.id)}
+            >
+              <Text style={styles.textoExcluir}>
+                Excluir
+              </Text>
+            </TouchableOpacity>
+
           </TouchableOpacity>
 
         )}
@@ -93,7 +148,9 @@ export default function TelaTaverna({ navigation }) {
       </TouchableOpacity>
 
     </View>
+
   );
+
 }
 
 const styles = StyleSheet.create({
@@ -110,6 +167,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#4a4a4a',
     textAlign: 'center'
+  },
+
+  totalXp: {
+    position: 'absolute',
+    top: 15,
+    right: 20,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#8b4513',
+    zIndex: 1
   },
 
   cartaoMissao: {
@@ -131,6 +198,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 5
+  },
+
+  botaoExcluir: {
+    marginTop: 10,
+    backgroundColor: '#8b4513',
+    padding: 8,
+    borderRadius: 5,
+    alignItems: 'center'
+  },
+
+  textoExcluir: {
+    color: '#fff',
+    fontWeight: 'bold'
   },
 
   botaoNovaMissao: {
